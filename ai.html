@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+</head>
+<body>
+
+	<button id="guess">clicky click mother fucker</button>
+
+	<h1 id="print"></h1>
+
+	<div id="grid">
+		
+	</div>
+	
+</body>
+</html>
+
+
+
+
+
+<script>
+
+	// build arena
+
+	var grid_span = 10;
+
+	// spawn
+	var point = {
+		x: 3,
+		y: 4
+	};
+
+	var gems = [];
+	var flys = [];
+	var frogs = [];
+
+	var gem = function(x, y) {
+		// constructor
+		this.element = document.createElement('div');
+		this.element.dataset.x = x;
+		this.element.dataset.y = y;
+		this.element.dataset.xy = 'x'+x+'y'+y;
+		this.element.className = 'gem';
+		this.coordinates = {x:x,y:y};
+		$('#grid').append(this.element);
+
+		gems.push(this);
+	}
+
+	var fly = function() {
+
+		// todo:: name --> coordinate 
+		this.position = {x:spawn(), y:spawn()}
+
+		this.move = function() {
+			var newpos = [];
+
+			for (var key in this.position) {
+				if(this.position.hasOwnProperty(key)) {
+					var dir = axisDir();
+					// test if in parameters else don't move
+
+					newpos[key] = this.position[key];
+
+					if(newpos[key] + dir <= grid_span && newpos[key] + dir > 0 ) {
+						newpos[key] += dir;
+					}
+				}
+			}
+
+			if(this.position != newpos) {
+				$(plotToGem(this.position)).removeClass('player');
+				this.position = newpos;
+				$(plotToGem(this.position)).addClass('player');
+				// log(this.position);
+				// this.animate_step();
+			}
+
+		}
+
+		this.animate_step = function() {
+			$(plotToGem(this.position)).addClass('player');
+		}
+
+		function spawn() {
+
+			return (Math.floor(Math.random() * 10) + 1);
+		}
+		// move() ??
+		function axisDir() {
+
+			return (Math.floor(Math.random() * 3)) - 1;
+		}
+	}
+
+	var frog = function() {
+		// this.memory = {x:[], y:[]};
+		// this.memory = {axis:([x:[], y:[]], )};
+
+		this.guess = function() {
+			var newpos = [];
+			var guess = [];
+			for (var key in this.memory) {
+				if (this.memory.hasOwnProperty(key)) {
+					var total = 0;
+
+					// tring to get last 10 memories
+					 // not 100's if wrkin
+					for(var i = this.memory[key].length; i > 0 && i > this.memory[key].length-10 ; i--) {
+						total += this.memory[key][i-1];
+					}
+
+					total += (Math.floor(Math.random() * 10) + 1);
+
+					// get the average. axis guess
+					// toPos
+					guess[key] = Math.round( total / (this.memory[key].length + 1) );
+
+					if(flys[0]['position'][key] == guess[key]) {
+						newpos[key] = guess[key];
+						this.memory[key].push(guess[key]);
+					}
+				}
+			}
+
+			// Direct Hit
+			console.log(guess);
+			// if hit
+			// if(newpos[x] > 1 && newpos[y] > 1) {
+				// alert('its its');
+				$(plotToGem(this.memory)).addClass('hit');
+			// }
+		}
+	}
+
+	frog.prototype.memory = {x:[], y:[]};
+
+	// memory analysis 
+	function pattern_finder(str) {
+		var pattern;
+		for (var i = 0; i > str.length; i++) {
+			var test_pattern = str.substr(-i);
+			if(string.indexOf(test_pattern) !== -1) {
+				pattern = test_pattern;
+			} else {
+				break;
+			}
+		}
+	}
+
+	// tryingToGroupFlys() {
+
+	// 	var wrd = new flys();
+	// 	wrd.forEachFly (function () { // forEach abstraction
+	// 		this.move();
+	// 	});
+	// 	var flys = function() {
+	// 		this.allFlys = [];
+	// 		this.createFlys = function() {
+	// 			this.allFlys.push(new fly());
+	// 		}
+
+	// 		this.forEachFly =  function (action) {
+	// 			for (var i = 0; i < this.allFlys.length; i++) {
+	// 		    	action.call(this.allFlys[i]);
+	// 	    	}
+	// 		}
+	// 	}
+
+	// 	var world = new flys();
+
+	// 	world.createFlys();
+
+	// 	CatFactory.forEachCat (function () { // forEach abstraction
+	// 	  alert(this.name + ' is ' + this.color);
+	// 	});
+	// }
+
+	var flys = [new fly(), new fly()];
+	var druid = new frog();
+
+	$('#guess').on('click', function() {
+		// log(flys);
+		for(var i = 0; i < flys.length; i++) {
+			flys[i].move();
+		}
+	});
+
+	setInterval(function(){ 
+
+		druid.guess();
+
+	}, 100);
+
+	for(var y = grid_span; y > 0; y--) {
+		for(var x = grid_span; x > 0; x--) {
+			gems.push(new gem(x,y));
+		}
+	}
+
+	function log(i) {
+		console.log(i);
+	}
+
+	function plotToGem(coordinates) {
+		var gem = '[data-xy="{{}}"]';
+		var plot = '';
+		for (var key in coordinates) {
+			if(coordinates.hasOwnProperty(key)) { 
+				plot += key+coordinates[key];
+			}
+		}
+		plot = gem.replace('{{}}', plot);
+		return plot;
+	}
+
+</script>
+
+<style>
+	.gem {
+		width: 20px;
+		height: 20px;
+		background-color: red;
+		margin: 2px;
+		float: right;
+	}
+
+	.gem:nth-child(10n + 11) {
+		clear: both;
+	}
+
+	.player {
+		background-color: black !important; 
+	}
+
+	.hit {
+		background-color: purple !important; 
+	}
+</style>
+
+
