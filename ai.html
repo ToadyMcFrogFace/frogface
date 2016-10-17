@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Document</title>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="jquery.min.js"></script>
 </head>
 <body>
 
@@ -34,6 +34,8 @@
 		y: 4
 	};
 
+	var axes = ['x', 'y'];
+
 	var gems = [];
 	var flys = [];
 	var frogs = [];
@@ -54,17 +56,17 @@
 	var fly = function() {
 
 		// todo:: name --> coordinate 
-		this.position = {x:spawn(), y:spawn()}
+		this.gem = {x:spawn(), y:spawn()}
 
 		this.move = function() {
 			var newpos = [];
 
-			for (var key in this.position) {
-				if(this.position.hasOwnProperty(key)) {
+			for (var key in this.gem) {
+				if(this.gem.hasOwnProperty(key)) {
 					var dir = axisDir();
 					// test if in parameters else don't move
 
-					newpos[key] = this.position[key];
+					newpos[key] = this.gem[key];
 
 					if(newpos[key] + dir <= grid_span && newpos[key] + dir > 0 ) {
 						newpos[key] += dir;
@@ -72,10 +74,10 @@
 				}
 			}
 
-			if(this.position != newpos) {
-				$(plotToGem(this.position)).removeClass('player');
-				this.position = newpos;
-				$(plotToGem(this.position)).addClass('player');
+			if(this.gem != newpos) {
+				$(plotToGem(this.gem)).removeClass('player');
+				this.gem = newpos;
+				$(plotToGem(this.gem)).addClass('player');
 				// log(this.position);
 				// this.animate_step();
 			}
@@ -83,7 +85,7 @@
 		}
 
 		this.animate_step = function() {
-			$(plotToGem(this.position)).addClass('player');
+			$(plotToGem(this.gem)).addClass('player');
 		}
 
 		function spawn() {
@@ -98,37 +100,73 @@
 	}
 
 	var frog = function() {
-		// this.memory = {x:[], y:[]};
-		// this.memory = {axis:([x:[], y:[]], )};
+		this.memory = [];
+		this.memory.push({'flyGem':flys[0]['gem'],'flyMovement':{x:0,y:0}});
+		this.memoryStrings = {'flyGem':{x:'|'+flys[0]['gem']['x'],y:'|'+flys[0]['gem']['y']},'flyMovement':{x:'|0',y:'|0'}};
+
+		this.buildMemory = function() {
+			var memoryObj = {};
+			var flyMovementObj = flyMovement(flys[0]['gem'], this.memory[this.memory.length - 1]['flyGem']); 
+			// var pushit = {x:0,y:0]
+
+			memoryObj['flyGem'] = flys[0]['gem'];
+			// console.log(flys[0]['gem']);
+			memoryObj['flyMovement'] = flyMovementObj;
+
+			this.memoryStrings.flyGem.x += flys[0]['gem']['x'] + '|';
+			this.memoryStrings.flyGem.y += flys[0]['gem']['y'] + '|';
+			this.memoryStrings.flyMovement.x += flyMovementObj['x'] + '|';
+			this.memoryStrings.flyMovement.y += flyMovementObj['y'] + '|';
+
+			this.memory.push(memoryObj);
+
+			stringSearch(this.memoryStrings.flyMovement.x);
+
+		}
+
+		function flyMovement(gem, fromGem) {
+			// console.log(gem);
+			// console.log(fromGem);
+			movement = [];
+			for(var i = 0; i < axes.length; i++) {
+				movement[axes[i]] = gem[axes[i]] - fromGem[axes[i]];
+			}
+			return movement;
+		}
 
 		this.guess = function() {
 			var newpos = [];
 			var guess = [];
-			for (var key in this.memory) {
-				if (this.memory.hasOwnProperty(key)) {
-					var total = 0;
 
-					// tring to get last 10 memories
-					 // not 100's if wrkin
-					for(var i = this.memory[key].length; i > 0 && i > this.memory[key].length-10 ; i--) {
-						total += this.memory[key][i-1];
-					}
+			// for (var key in this.memory) {
+			// 	if (this.memory.hasOwnProperty(key)) {
+			// 		var total = 0;
 
-					total += (Math.floor(Math.random() * 10) + 1);
+			// 		// tring to get last 10 memories
+			// 		 // not 100's if wrkin
+			// 		for(var i = this.memory[key].length; i > 0 && i > this.memory[key].length-10 ; i--) {
+			// 			total += this.memory[key][i-1];
+			// 		}
 
-					// get the average. axis guess
-					// toPos
-					guess[key] = Math.round( total / (this.memory[key].length + 1) );
+			// 		total += (Math.floor(Math.random() * 10) + 1);
 
-					if(flys[0]['position'][key] == guess[key]) {
-						newpos[key] = guess[key];
-						this.memory[key].push(guess[key]);
-					}
-				}
+			// 		// get the average. axis guess
+			// 		// toPos
+			// 		guess[key] = Math.round( total / (this.memory[key].length + 1) );
+
+			// 		if(flys[0]['gem'][key] == guess[key]) {
+			// 			newpos[key] = guess[key];
+			// 			this.memory[key].push(guess[key]);
+			// 		}
+			// 	}
+			// }
+
+			if(guess.length > 0) {
+
 			}
 
 			// Direct Hit
-			console.log(guess);
+			// console.log(guess);
 			// if hit
 			// if(newpos[x] > 1 && newpos[y] > 1) {
 				// alert('its its');
@@ -137,19 +175,66 @@
 		}
 	}
 
-	frog.prototype.memory = {x:[], y:[]};
+	// frog.prototype.memory = [{'flyGem':flys[0],'flyMovement':{x:0,y:0}}];
 
 	// memory analysis 
-	function pattern_finder(str) {
+	function stringSearch(str) {
 		var pattern;
-		for (var i = 0; i > str.length; i++) {
-			var test_pattern = str.substr(-i);
-			if(string.indexOf(test_pattern) !== -1) {
-				pattern = test_pattern;
-			} else {
-				break;
+		// var oc
+		for (var i = str.length; i >= 0; i--) {
+			if(str.substring((i-1), i) == '|') {
+				testPattern = str.substring((i-1), str.length);
+				if(testPattern!='|') {
+					// console.log('testPattern: ' +testPattern);
+					// console.log('str: ' +str);
+					oc = occurrences(str, testPattern, true);
+					if(oc <= 1) {
+						break;
+					}
+					log('i: ' + i);
+					log(oc);
+					pattern = testPattern;
+					// popPipe(oc);
+				}
 			}
 		}
+	}
+
+	/** Function that count occurrences of a substring in a string;
+	 * @param {String} string               The string
+	 * @param {String} subString            The sub string to search for
+	 * @param {Boolean} [allowOverlapping]  Optional. (Default:false)
+	 * @author Vitim.us http://stackoverflow.com/questions/4009756/how-to-count-string-occurrence-in-string/7924240#7924240
+	 */
+	function occurrences(string, subString, allowOverlapping) {
+
+	    string += "";
+	    subString += "";
+	    if (subString.length <= 0) return (string.length + 1);
+
+	    var n = 0,
+	        pos = 0,
+	        step = allowOverlapping ? 1 : subString.length,
+	        prediction = [];
+
+	    while (true) {
+	        pos = string.indexOf(subString, pos);
+	        if (pos >= 0 && (pos + subString.length != string.length)) {
+	        	var po = popPipe(string.substring(pos + subString.length, string.length), 0);
+	        	// log(po);
+
+	        	prediction.push(po);
+	            // n.push(string.substring(pos + subString.length, pos + subString.length + 1));
+	            ++n
+	            pos += step;
+	        } else break;
+	    }
+	    return prediction;
+	}
+
+	function popPipe(str, index) {
+		var array = str.split('|');
+		return array[index];
 	}
 
 	// tryingToGroupFlys() {
@@ -180,7 +265,7 @@
 	// 	});
 	// }
 
-	var flys = [new fly(), new fly()];
+	var flys = [new fly()];
 	var druid = new frog();
 
 	$('#guess').on('click', function() {
@@ -188,13 +273,14 @@
 		for(var i = 0; i < flys.length; i++) {
 			flys[i].move();
 		}
+		druid.buildMemory();
 	});
 
-	setInterval(function(){ 
+	// setInterval(function(){ 
 
-		druid.guess();
+	// 	druid.guess();
 
-	}, 100);
+	// }, 100);
 
 	for(var y = grid_span; y > 0; y--) {
 		for(var x = grid_span; x > 0; x--) {
