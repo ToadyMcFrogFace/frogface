@@ -26,24 +26,22 @@
 
 	// build arena
 
-	var grid_span = 10;
+	var grid_span = 10,
+		axes = ['x', 'y'];
 
-	var axes = ['x', 'y'];
 
-	var gems = [];
-	var flys = [];
-	var frogs = [];
+	var	gems = [],
+		flys = [],
+		frogs = [];
 
-	var gem = function(x, y) {
+	var gem = function(axis) {
 		// constructor
 		this.element = document.createElement('div');
 		for(var i = 0; i < axes.length; i++) {
-			this.element.dataset[axes[i]] = plot[axes[i]];
+			this.element.dataset[axes[i]] = axis[axes[i]];
 		}
-		// this.element.dataset.x = x;
-		// this.element.dataset.y = y;
 		this.element.className = 'gem';
-		this.coordinates = {x:x,y:y};
+		this.coordinates = {axis};
 		$('#grid').append(this.element);
 
 		gems.push(this);
@@ -272,9 +270,23 @@
 		}, 100);
 	});
 
+	axis[]
+
+	// var funStrCore = 'new gem[axis]'; //{x:x,y:y,z:z,q:q} 
+	// Dynamically build grid, 
+	var funStr = '';
+
 	for(var i = 0; i < axes.length; i++) {
-		for(var )
+		funStr = axes[i] + ': ' + axes[i] + ( i == axes.length - 1 ? '' : ',');
 	}
+
+	funStr = 'var axis = {' + funStr + '}; gems.push(new gem(axis));';
+
+	for(var i = 0; i < axes.length; i++) {
+		funStr = 'for(var '+ axes[i] +' = grid_span; '+axes[i]+' > 0; '+axes[i]+'--) {' + funStr + '}';
+	}
+
+	eval(funStr);
 
 	for(var y = grid_span; y > 0; y--) {
 		for(var x = grid_span; x > 0; x--) {
