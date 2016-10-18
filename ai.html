@@ -28,12 +28,6 @@
 
 	var grid_span = 10;
 
-	// spawn
-	var point = {
-		x: 3,
-		y: 4
-	};
-
 	var axes = ['x', 'y'];
 
 	var gems = [];
@@ -43,9 +37,11 @@
 	var gem = function(x, y) {
 		// constructor
 		this.element = document.createElement('div');
-		this.element.dataset.x = x;
-		this.element.dataset.y = y;
-		this.element.dataset.xy = 'x'+x+'y'+y;
+		for(var i = 0; i < axes.length; i++) {
+			this.element.dataset[axes[i]] = plot[axes[i]];
+		}
+		// this.element.dataset.x = x;
+		// this.element.dataset.y = y;
 		this.element.className = 'gem';
 		this.coordinates = {x:x,y:y};
 		$('#grid').append(this.element);
@@ -100,13 +96,24 @@
 	}
 
 	var frog = function() {
+		this.toGem;
 		this.memory = [];
 		this.memory.push({'flyGem':flys[0]['gem'],'flyMovement':{x:0,y:0}});
 		this.memoryStrings = {'flyGem':{x:'|'+flys[0]['gem']['x'],y:'|'+flys[0]['gem']['y']},'flyMovement':{x:'|0',y:'|0'}};
 
 		this.buildMemory = function() {
+					
+			$('.gem').removeClass('hit');
+			$(plotToGem(this.toGem)).addClass('hit');
+
+
+			// if(this.toGem[x] == flys[0]['gem']['x'] && this.toGem[y] == flys[0]['gem']['y']) {
+			// 	console.log('hit');
+			// }
+
 			var memoryObj = {};
 			var flyMovementObj = flyMovement(flys[0]['gem'], this.memory[this.memory.length - 1]['flyGem']); 
+			var facts = {}
 			// var pushit = {x:0,y:0]
 
 			memoryObj['flyGem'] = flys[0]['gem'];
@@ -119,8 +126,57 @@
 			this.memoryStrings.flyMovement.y += flyMovementObj['y'] + '|';
 
 			this.memory.push(memoryObj);
+			for (var i = 0; i<axes.length; i++) {
+				facts[axes[i]] = stringSearch(this.memoryStrings.flyMovement[axes[i]]);
+			}
 
-			stringSearch(this.memoryStrings.flyMovement.x);
+			this.toGem = guessToGem(facts);
+
+			function guessToGem(facts) {
+				// console.log(facts);
+				var motion = [];
+				var toGem = [];
+
+				for (var i = 0; i<axes.length; i++) {
+					var tally = [];
+					var se = 0;
+					var motionGuess = [];
+
+
+					for(var s = 0; s < facts[axes[i]].length; s++) {
+
+						for(var key in facts[axes[i]][s]['motionCount']) {
+							if(facts[axes[i]][s]['motionCount'].hasOwnProperty(key)) {
+								tally[key] = tally[key] || 0;
+								tally[key] += (facts[axes[i]][s]['motionCount'][key] *facts[axes[i]][s]['substringLength']);
+							}
+						}
+
+					}
+
+					for(var key in tally) {
+						if(tally.hasOwnProperty(key)) {
+							if(tally[key] > se) {
+								se = tally[key];
+								motionGuess = key;
+							}
+						}
+					}
+
+					motion[axes[i]] = motionGuess;
+				}
+
+
+				for (var i = 0; i<axes.length; i++) {
+					toGem[axes[i]] = parseInt(flys[0]['gem'][axes[i]]) + parseInt(motion[axes[i]]);
+				}
+
+				// console.log(flys[0]['gem']);
+				// console.log(toGem);
+				return toGem;
+			}
+
+
 
 		}
 
@@ -133,46 +189,6 @@
 			}
 			return movement;
 		}
-
-		this.guess = function() {
-			var newpos = [];
-			var guess = [];
-
-			// for (var key in this.memory) {
-			// 	if (this.memory.hasOwnProperty(key)) {
-			// 		var total = 0;
-
-			// 		// tring to get last 10 memories
-			// 		 // not 100's if wrkin
-			// 		for(var i = this.memory[key].length; i > 0 && i > this.memory[key].length-10 ; i--) {
-			// 			total += this.memory[key][i-1];
-			// 		}
-
-			// 		total += (Math.floor(Math.random() * 10) + 1);
-
-			// 		// get the average. axis guess
-			// 		// toPos
-			// 		guess[key] = Math.round( total / (this.memory[key].length + 1) );
-
-			// 		if(flys[0]['gem'][key] == guess[key]) {
-			// 			newpos[key] = guess[key];
-			// 			this.memory[key].push(guess[key]);
-			// 		}
-			// 	}
-			// }
-
-			if(guess.length > 0) {
-
-			}
-
-			// Direct Hit
-			// console.log(guess);
-			// if hit
-			// if(newpos[x] > 1 && newpos[y] > 1) {
-				// alert('its its');
-				$(plotToGem(this.memory)).addClass('hit');
-			// }
-		}
 	}
 
 	// frog.prototype.memory = [{'flyGem':flys[0],'flyMovement':{x:0,y:0}}];
@@ -180,24 +196,23 @@
 	// memory analysis 
 	function stringSearch(str) {
 		var pattern;
+		var facts = [];
 		// var oc
 		for (var i = str.length; i >= 0; i--) {
 			if(str.substring((i-1), i) == '|') {
 				testPattern = str.substring((i-1), str.length);
 				if(testPattern!='|') {
-					// console.log('testPattern: ' +testPattern);
-					// console.log('str: ' +str);
 					oc = occurrences(str, testPattern, true);
-					if(oc <= 1) {
+					if(oc.toGem <= 1) {
 						break;
 					}
-					log('i: ' + i);
-					log(oc);
-					pattern = testPattern;
-					// popPipe(oc);
+					facts.push(oc);
 				}
 			}
 		}
+
+		return facts;
+
 	}
 
 	/** Function that count occurrences of a substring in a string;
@@ -215,72 +230,51 @@
 	    var n = 0,
 	        pos = 0,
 	        step = allowOverlapping ? 1 : subString.length,
-	        prediction = [];
+	        motions = [];
+	        facts = {substring:subString, substringLength: countPipe(subString), motionCount:{}, toGem:[]};
 
 	    while (true) {
 	        pos = string.indexOf(subString, pos);
 	        if (pos >= 0 && (pos + subString.length != string.length)) {
-	        	var po = popPipe(string.substring(pos + subString.length, string.length), 0);
-	        	// log(po);
+	        	var motion = popPipe(string.substring(pos + subString.length, string.length), 0);
 
-	        	prediction.push(po);
-	            // n.push(string.substring(pos + subString.length, pos + subString.length + 1));
+	        	facts.motionCount[motion] = facts.motionCount[motion]+1||1;
+
+	        	facts.toGem.push(motion);
 	            ++n
 	            pos += step;
 	        } else break;
 	    }
-	    return prediction;
+	    return facts;
 	}
 
 	function popPipe(str, index) {
 		var array = str.split('|');
-		return array[index];
+		return parseInt(array[index]);
 	}
 
-	// tryingToGroupFlys() {
+	function countPipe(str) {
+		var array = str.split('|');
+		return array.length - 2;
 
-	// 	var wrd = new flys();
-	// 	wrd.forEachFly (function () { // forEach abstraction
-	// 		this.move();
-	// 	});
-	// 	var flys = function() {
-	// 		this.allFlys = [];
-	// 		this.createFlys = function() {
-	// 			this.allFlys.push(new fly());
-	// 		}
-
-	// 		this.forEachFly =  function (action) {
-	// 			for (var i = 0; i < this.allFlys.length; i++) {
-	// 		    	action.call(this.allFlys[i]);
-	// 	    	}
-	// 		}
-	// 	}
-
-	// 	var world = new flys();
-
-	// 	world.createFlys();
-
-	// 	CatFactory.forEachCat (function () { // forEach abstraction
-	// 	  alert(this.name + ' is ' + this.color);
-	// 	});
-	// }
+	}
 
 	var flys = [new fly()];
 	var druid = new frog();
 
 	$('#guess').on('click', function() {
-		// log(flys);
-		for(var i = 0; i < flys.length; i++) {
-			flys[i].move();
-		}
-		druid.buildMemory();
+		setInterval(function(){ 
+			// log(flys);
+			for(var i = 0; i < flys.length; i++) {
+				flys[i].move();
+			}
+			druid.buildMemory();
+		}, 100);
 	});
 
-	// setInterval(function(){ 
-
-	// 	druid.guess();
-
-	// }, 100);
+	for(var i = 0; i < axes.length; i++) {
+		for(var )
+	}
 
 	for(var y = grid_span; y > 0; y--) {
 		for(var x = grid_span; x > 0; x--) {
@@ -293,14 +287,12 @@
 	}
 
 	function plotToGem(coordinates) {
-		var gem = '[data-xy="{{}}"]';
 		var plot = '';
 		for (var key in coordinates) {
 			if(coordinates.hasOwnProperty(key)) { 
-				plot += key+coordinates[key];
+				plot += '[data-'+key+'="'+coordinates[key]+'"]';
 			}
 		}
-		plot = gem.replace('{{}}', plot);
 		return plot;
 	}
 
