@@ -6,6 +6,8 @@
 	<script src="jquery.min.js"></script>
 </head>
 <body>
+<canvas id="myCanvas" width="200" height="100" style="border:1px solid #000000;">
+</canvas>
 
 	<button id="guess">clicky click mother fucker</button>
 
@@ -18,16 +20,12 @@
 </body>
 </html>
 
-
-
-
-
 <script>
 
 	// build arena
 
-	var grid_span = 10,
-		axes = ['x', 'y'];
+	var grid_span = 3,
+		axes = ['x', 'y', 'z', 'q'];
 
 
 	var	gems = [],
@@ -48,9 +46,11 @@
 	}
 
 	var fly = function() {
+		this.gem = {};
 
-		// todo:: name --> coordinate 
-		this.gem = {x:spawn(), y:spawn()}
+		for(var i = 0; i < axes.length; i++) {
+			this.gem[axes[i]] = spawn();
+		}
 
 		this.move = function() {
 			var newpos = [];
@@ -72,8 +72,6 @@
 				$(plotToGem(this.gem)).removeClass('player');
 				this.gem = newpos;
 				$(plotToGem(this.gem)).addClass('player');
-				// log(this.position);
-				// this.animate_step();
 			}
 
 		}
@@ -84,7 +82,7 @@
 
 		function spawn() {
 
-			return (Math.floor(Math.random() * 10) + 1);
+			return (Math.floor(Math.random() * grid_span) + 1);
 		}
 		// move() ??
 		function axisDir() {
@@ -97,7 +95,21 @@
 		this.toGem;
 		this.memory = [];
 		this.memory.push({'flyGem':flys[0]['gem'],'flyMovement':{x:0,y:0}});
-		this.memoryStrings = {'flyGem':{x:'|'+flys[0]['gem']['x'],y:'|'+flys[0]['gem']['y']},'flyMovement':{x:'|0',y:'|0'}};
+
+		this.memoryStrings = {
+			'flyGem':{},
+			'flyMovement':{}
+		};
+
+
+		// can only see in its own dimension 
+		// at moment frog is aware of all dimensions 
+		// should create shared function between all animals 
+		for (var i = 0; i < axes.length; i++) { 
+			this.memoryStrings.flyGem[axes[i]] = '|' + flys[0]['gem'][axes[i]];
+			this.memoryStrings.flyMovement[axes[i]] = '|0';
+		}
+
 
 		this.buildMemory = function() {
 					
@@ -105,23 +117,18 @@
 			$(plotToGem(this.toGem)).addClass('hit');
 
 
-			// if(this.toGem[x] == flys[0]['gem']['x'] && this.toGem[y] == flys[0]['gem']['y']) {
-			// 	console.log('hit');
-			// }
-
 			var memoryObj = {};
 			var flyMovementObj = flyMovement(flys[0]['gem'], this.memory[this.memory.length - 1]['flyGem']); 
 			var facts = {}
-			// var pushit = {x:0,y:0]
 
 			memoryObj['flyGem'] = flys[0]['gem'];
-			// console.log(flys[0]['gem']);
 			memoryObj['flyMovement'] = flyMovementObj;
 
-			this.memoryStrings.flyGem.x += flys[0]['gem']['x'] + '|';
-			this.memoryStrings.flyGem.y += flys[0]['gem']['y'] + '|';
-			this.memoryStrings.flyMovement.x += flyMovementObj['x'] + '|';
-			this.memoryStrings.flyMovement.y += flyMovementObj['y'] + '|';
+			for (var i = 0; i < axes.length; i++) { 
+				this.memoryStrings.flyGem[axes[i]] += flys[0]['gem'][axes[i]] + '|';
+				this.memoryStrings.flyMovement[axes[i]] += flyMovementObj[axes[i]] + '|';
+			}
+
 
 			this.memory.push(memoryObj);
 			for (var i = 0; i<axes.length; i++) {
@@ -174,13 +181,10 @@
 				return toGem;
 			}
 
-
-
 		}
 
+
 		function flyMovement(gem, fromGem) {
-			// console.log(gem);
-			// console.log(fromGem);
 			movement = [];
 			for(var i = 0; i < axes.length; i++) {
 				movement[axes[i]] = gem[axes[i]] - fromGem[axes[i]];
@@ -270,29 +274,20 @@
 		}, 100);
 	});
 
-	axis[]
-
 	// var funStrCore = 'new gem[axis]'; //{x:x,y:y,z:z,q:q} 
 	// Dynamically build grid, 
-	var funStr = '';
-
-	for(var i = 0; i < axes.length; i++) {
-		funStr = axes[i] + ': ' + axes[i] + ( i == axes.length - 1 ? '' : ',');
-	}
-
-	funStr = 'var axis = {' + funStr + '}; gems.push(new gem(axis));';
-
-	for(var i = 0; i < axes.length; i++) {
-		funStr = 'for(var '+ axes[i] +' = grid_span; '+axes[i]+' > 0; '+axes[i]+'--) {' + funStr + '}';
-	}
-
-	eval(funStr);
-
-	for(var y = grid_span; y > 0; y--) {
-		for(var x = grid_span; x > 0; x--) {
-			gems.push(new gem(x,y));
+	(function buildGrid() {
+		var funStr = '';
+		for(var i = 0; i < axes.length; i++) {
+			funStr += axes[i] + ': ' + axes[i] + ( i == axes.length - 1 ? '' : ',');
 		}
-	}
+		funStr = 'var axis = {' + funStr + '}; gems.push(new gem(axis));';
+		for(var i = 0; i < axes.length; i++) {
+			funStr = 'for(var '+ axes[i] +' = grid_span; '+axes[i]+' > 0; '+axes[i]+'--) {' + funStr + '}';
+		}
+		eval(funStr);
+	})();
+
 
 	function log(i) {
 		console.log(i);
@@ -308,19 +303,62 @@
 		return plot;
 	}
 
+	$('.gem:nth-child('+grid_span+'n + '+(grid_span+1)+')').css('clear', 'both');
+
+	// $('.block:nth-of-type('+grid_span+'n + '+(grid_span+1)+')').css('clear', 'both');
+
+	var divs = $(".gem");
+	for(var i = 0; i < divs.length; i += Math.pow(grid_span, 2)) {
+		divs.slice(i, i + Math.pow(grid_span, 2)).wrapAll("<div class='block'></div>");
+	}
+
+	// var divs = $(".block");
+	// for(var i = 0; i < divs.length; i ++) {
+	// 	divs.slice(i, i + Math.pow(grid_span, 2)).wrapAll("<div class='block'></div>");
+	// }
+
 </script>
 
 <style>
-	.gem {
-		width: 20px;
-		height: 20px;
-		background-color: red;
-		margin: 2px;
-		float: right;
+
+	#grid {
+		position: relative;
 	}
 
-	.gem:nth-child(10n + 11) {
-		clear: both;
+	.block {
+		position: absolute;
+	}
+
+/*	.gem {
+		width: 4px;
+		height: 4px;
+		background-color: red;
+		margin: 0.5px;
+		float: right;
+	}*/
+
+canvas.gem {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+	.block:nth-of-type(2) {
+		margin-right: 15px;
+	}
+
+	.block:nth-of-type(3) {
+		margin-right: 30px;
+	}
+
+	.block:nth-of-type(5) {
+		margin-right: 15px;
+	}
+
+	.block:nth-of-type(6) {
+		margin-right: 30px;
 	}
 
 	.player {
